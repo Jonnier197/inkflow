@@ -1,0 +1,228 @@
+========================================================
+  INKFLOW — RED SOCIAL / BLOG
+  Proyecto Final de Curso
+========================================================
+
+TECNOLOGÍAS USADAS
+------------------
+  Backend:  Node.js + Fastify + TypeScript
+  Frontend: Vite + Vanilla TypeScript (modular)
+  Base de datos: PostgreSQL (Neon recomendado)
+  Auth: JWT (@fastify/jwt)
+  Docs: Swagger UI + OpenAPI 3.0
+
+ENTIDADES DEL SISTEMA
+----------------------
+  1. users      — Usuarios (id, username, email, password_hash, bio, avatar_url)
+  2. posts      — Publicaciones (id, user_id, title, content, image_url, tags, published)
+  3. comments   — Comentarios (id, post_id, user_id, content)
+  4. likes      — Likes de posts (id, user_id, post_id) — UNIQUE por par
+  5. followers  — Relación seguidor/seguido (id, follower_id, following_id)
+
+DIAGRAMA RELACIONAL (simplificado)
+-----------------------------------
+  users ──< posts        (1 usuario → N posts)
+  users ──< comments     (1 usuario → N comentarios)
+  posts ──< comments     (1 post → N comentarios)
+  users ──< likes        (1 usuario → N likes)
+  posts ──< likes        (1 post → N likes)
+  users ──< followers    (M:N entre usuarios, auto-referencia)
+
+========================================================
+  PASOS PARA EJECUTAR
+========================================================
+
+1. CONFIGURAR BASE DE DATOS (Neon)
+-----------------------------------
+  a) Ir a https://neon.tech y crear una cuenta gratuita
+  b) Crear un nuevo proyecto (ej: "inkflow")
+  c) Copiar el "Connection String" que tiene el formato:
+       postgresql://usuario:contraseña@host/dbname?sslmode=require
+  d) Guardar ese string, lo usarás en el paso 3
+
+2. INSTALAR DEPENDENCIAS
+--------------------------
+  Abre DOS terminales.
+
+  Terminal 1 — BACKEND:
+    cd backend
+    npm install
+
+  Terminal 2 — FRONTEND:
+    cd frontend
+    npm install
+
+3. CONFIGURAR VARIABLES DE ENTORNO (BACKEND)
+---------------------------------------------
+  cd backend
+  cp .env.example .env
+
+  Edita el archivo .env con tu editor favorito:
+    DATABASE_URL=postgresql://usuario:contraseña@host/dbname?sslmode=require
+    JWT_SECRET=una_clave_secreta_larga_y_segura
+    PORT=3000
+    NODE_ENV=development
+
+4. EJECUTAR MIGRACIÓN DE BASE DE DATOS
+----------------------------------------
+  (Con el .env ya configurado)
+  cd backend
+  npm run db:migrate
+
+  Esto crea todas las tablas en tu base de datos Neon.
+  Deberías ver:
+    ✅ Migración ejecutada correctamente
+
+5. INICIAR EL BACKEND
+-----------------------
+  cd backend
+  npm run dev
+
+  Deberías ver:
+    🚀 Servidor corriendo en http://localhost:3000
+    📚 Documentación Swagger: http://localhost:3000/docs
+
+6. INICIAR EL FRONTEND
+------------------------
+  cd frontend
+  npm run dev
+
+  Deberías ver:
+    VITE v5.x  ready in Xms
+    ➜  Local:   http://localhost:5173/
+
+7. ABRIR LA APLICACIÓN
+------------------------
+  Abre tu navegador en: http://localhost:5173
+
+  Documentación API Swagger: http://localhost:3000/docs
+
+========================================================
+  ENDPOINTS PRINCIPALES
+========================================================
+
+  Sin token (públicos):
+    POST /auth/register    — Crear usuario
+    POST /auth/login       — Iniciar sesión
+
+  Con token JWT (Bearer):
+    GET  /users/me         — Mi perfil
+    PUT  /users/me         — Actualizar mi perfil
+    DELETE /users/me       — Eliminar mi cuenta
+    GET  /users/search?q=  — Buscar usuarios
+    GET  /users/:id        — Perfil de usuario
+    POST /users/:id/follow — Seguir/dejar de seguir
+
+    GET  /posts/feed       — Feed personalizado
+    GET  /posts            — Todos los posts
+    POST /posts            — Crear post
+    PUT  /posts/:id        — Actualizar post
+    DELETE /posts/:id      — Eliminar post
+    POST /posts/:id/like   — Like/unlike
+
+    GET  /posts/:id/comments    — Comentarios del post
+    POST /posts/:id/comments    — Agregar comentario
+    DELETE /posts/comments/:id  — Eliminar comentario
+
+  Swagger UI completo en: http://localhost:3000/docs
+
+========================================================
+  NOTAS IMPORTANTES
+========================================================
+
+  - El proxy de Vite redirige /api/* al backend automáticamente.
+    Esto significa que desde el frontend, /api/auth/login
+    llega al backend como /auth/login.
+
+  - Los únicos endpoints SIN token son /auth/register y
+    /auth/login (según los requerimientos del proyecto).
+
+  - Para producción, ejecuta:
+      cd backend && npm run build && npm start
+      cd frontend && npm run build   (genera carpeta dist/)
+
+  - El diseño usa la fuente Playfair Display + DM Sans
+    cargadas desde Google Fonts. Requiere conexión a internet.
+
+========================================================
+  ESTRUCTURA DEL PROYECTO
+========================================================
+
+  proyecto/
+  ├── backend/
+  │   ├── src/
+  │   │   ├── config/
+  │   │   │   └── database.ts       ← Conexión PostgreSQL
+  │   │   ├── controllers/
+  │   │   │   ├── auth.controller.ts
+  │   │   │   ├── user.controller.ts
+  │   │   │   └── post.controller.ts
+  │   │   ├── db/
+  │   │   │   └── migrate.ts        ← Migración SQL
+  │   │   ├── middlewares/
+  │   │   │   └── auth.middleware.ts ← Verificación JWT
+  │   │   ├── models/
+  │   │   │   ├── user.model.ts
+  │   │   │   ├── post.model.ts
+  │   │   │   └── social.model.ts   ← Comments, Likes, Followers
+  │   │   ├── routes/
+  │   │   │   ├── auth.routes.ts
+  │   │   │   ├── user.routes.ts
+  │   │   │   └── post.routes.ts
+  │   │   └── server.ts             ← Punto de entrada Fastify
+  │   ├── .env.example
+  │   ├── package.json
+  │   └── tsconfig.json
+  │
+  └── frontend/
+      ├── src/
+      │   ├── components/
+      │   │   ├── Navbar.ts
+      │   │   └── PostCard.ts
+      │   ├── pages/
+      │   │   ├── login.ts
+      │   │   ├── register.ts
+      │   │   ├── feed.ts
+      │   │   ├── explore.ts
+      │   │   ├── createPost.ts
+      │   │   ├── postDetail.ts
+      │   │   ├── profile.ts
+      │   │   └── settings.ts
+      │   ├── services/
+      │   │   └── api.ts            ← Consumo de API REST
+      │   ├── styles/
+      │   │   └── main.css
+      │   ├── types/
+      │   │   └── index.ts
+      │   ├── utils/
+      │   │   ├── authStore.ts      ← Estado de autenticación
+      │   │   └── router.ts         ← SPA Router vanilla
+      │   └── main.ts               ← Punto de entrada + rutas
+      ├── index.html
+      ├── package.json
+      ├── tsconfig.json
+      └── vite.config.ts
+
+========================================================
+  FUNCIONALIDADES IMPLEMENTADAS
+========================================================
+
+  ✅ Registro de usuario (sin token)
+  ✅ Inicio de sesión (sin token)
+  ✅ Cierre de sesión
+  ✅ Actualización de perfil (username, bio, avatar)
+  ✅ Eliminación de cuenta
+  ✅ Crear / editar / eliminar posts
+  ✅ Ver feed personalizado (posts de seguidos)
+  ✅ Explorar todos los posts
+  ✅ Ver detalle completo de un post
+  ✅ Sistema de likes (toggle)
+  ✅ Comentar en posts
+  ✅ Eliminar comentarios propios
+  ✅ Seguir / dejar de seguir usuarios
+  ✅ Ver seguidores y seguidos
+  ✅ Buscar usuarios
+  ✅ Ver perfil público de cualquier usuario
+  ✅ Documentación Swagger / OpenAPI 3.0
+  ✅ Seguridad JWT en todos los endpoints protegidos
+  ✅ Diseño responsive dark mode con tipografía editorial
